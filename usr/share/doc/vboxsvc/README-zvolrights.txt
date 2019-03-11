@@ -1,6 +1,6 @@
 HISTORY AND AUTHORS
 
-* Copyright (C) 2012-2013 by Jim Klimov, JSC COS&HT
+* Copyright (C) 2012-2019 by Jim Klimov, JSC COS&HT
 * Thanks to Edward Ned Harvey for idea and constructive discussion while we
   authored our different solutions to the same problem
 

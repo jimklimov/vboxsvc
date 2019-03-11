@@ -6,7 +6,7 @@ HISTORY AND AUTHORS
   See his original posts:
   * http://adumont.serveblog.net/2009/07/21/virtualbox-smf/
   * http://adumont.serveblog.net/2009/09/01/virtualbox-smf-2/
-* Copyright (C) 2010-2015 by Jim Klimov, JSC COS&HT
+* Copyright (C) 2010-2019 by Jim Klimov, JSC COS&HT
   One of the "heavily upgraded" versions of these scripts was written
   by Jim Klimov, JSC COS&HT (Center of Open Systems and High Technologies)
   * It was initially published on VirtualBox forum as a topic
