@@ -4,11 +4,12 @@ vboxsvc
 SMF service wrapper for Sun/Oracle VirtualBox under Sun/Oracle Solaris 10+
 and OpenSolaris builds (including OpenIndiana and illumos).
 
-Detailed project description is available in the README file:
-[usr/share/doc/vboxsvc/README-vboxsvc.txt]
+Detailed project description is available in the
+link:usr/share/doc/vboxsvc/README-vboxsvc.txt[README-vboxsvc.txt] file
 
-Discuss and get help in VirtualBox Forum thread "[Free as in beer] SMF service
-for VirtualBox VM's": [https://forums.virtualbox.org/viewtopic.php?f=11&t=33249]
+Discuss and get help in VirtualBox Forum thread 
+link:https://forums.virtualbox.org/viewtopic.php?f=11&t=33249["[Free
+as in beer\] SMF service for VirtualBox VM's"]
 
 Features
 ~~~~~~~~
@@ -68,12 +69,13 @@ Features
   ZFS properties the customized (non-default) ZVOL device node ownership
   and access-rights attributes. Solaris and illumos currently lack a
   kernel-based capability to do this automatically :(
-  See [usr/share/doc/vboxsvc/README-zvolrights.txt] for more details,
-  including how to enable this service on your system (not done by default).
+  ** See link:usr/share/doc/vboxsvc/README-zvolrights.txt[README-zvolrights.txt]
+     for more details, including how to enable this service on your system
+     (not done by default).
 * Version 0.18 is currently in development -- grab a tarball from SVN or
   GitHub to see the bleeding-edge new features! URLs:
-  ** [http://vboxsvc.svn.sourceforge.net/viewvc/vboxsvc/?view=tar]
-  ** [https://github.com/jimklimov/vboxsvc]
+  ** http://vboxsvc.svn.sourceforge.net/viewvc/vboxsvc/?view=tar
+  ** https://github.com/jimklimov/vboxsvc
 
 Hope this project helps you tame your virtual boxes!
 
