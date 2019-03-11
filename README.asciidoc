@@ -42,11 +42,20 @@ Features
 * Some other command-line features available (graceful poweroff, soft ACPI
   reboot, hard reset, rude poweroff, status check, take ZFS snapshots of
   backing storage, etc.)
-* Recently tested with current VirtualBox 4.2.0 release and OpenIndiana
-  OI_151a5 host system, most things just work ;)
-  * NOTE: For VirtualBox 4.x the 0.17 dev SVN version of the script is needed,
-    or a manual site-local tweak, to account for change in VBox command-line
-    parameters -- vrdp vs. vrde, if you use NICE)
+* This project is in development since VirtualBox 2.x was current :)
+  Relatively recently tested systems included:
+  * VirtualBox 3.0.12 on host systems from early Solaris 10 to OpenSolaris
+    SXCE snv_117 (still Sun) and up to OpenIndiana OI_151a8 (illumos ~2013)
+  * VirtualBox 4.2.0 release and OpenIndiana OI_151a5 host system (~2012),
+    most things just work ;)
+    * NOTE: For VirtualBox 4.x the 0.17+ dev SVN version of the script is
+      needed, or a manual site-local tweak for earlier releases, to account
+      for change in VBox command-line parameters -- vrdp vs. vrde, if you
+      use NICE settings)
+  * VirtualBox 5.0.40 on OpenIndiana "hipster" rolling-release (tested/used
+    since 2017 with 0.18 dev version)
+  * VirtualBox 5.2.24 built and provided by OpenIndiana "hipster" native
+    packaging since early 2019
 * Interactive and "dual-boot" VMs are also supported since release 0.17,
   so that the user manually starts up the interactive VM when needed,
   and SMF shuts it down properly when needed. A new `startgui -fg` mode
@@ -65,3 +74,6 @@ Features
   GitHub to see the bleeding-edge new features! URLs:
   * [http://vboxsvc.svn.sourceforge.net/viewvc/vboxsvc/?view=tar]
   * [https://github.com/jimklimov/vboxsvc]
+
+Hope this helps you tame your virtual boxes!
+Jim Klimov
