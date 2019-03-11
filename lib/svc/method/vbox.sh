@@ -10,7 +10,7 @@
 # Copyright (c) 2009 Alexandre Dumont
 # Copyright (C) 2009 minor patches by Jim Klimov to start "saved" machines
 # Copyright (C) 2010-2019 larger patches by Jim Klimov, JCS COS&HT
-#	$Id: vbox.sh,v 1.96 2019/03/10 13:00:33 jim Exp $
+#	$Id: vbox.sh,v 1.97 2019/03/11 10:50:11 jim Exp $
 #	* process aborted, paused VM's
 #	* "vm/debug_smf" flag, "vm/nice" flag.
 #	* Inherit service-level default attribute values.
@@ -83,7 +83,7 @@ export LC_ALL
 
 printHelp() {
     echo "vboxsvc, an SMF method for VirtualBox: (C) 2010-2015 by Jim Klimov,"
-    echo '	$Id: vbox.sh,v 1.96 2019/03/10 13:00:33 jim Exp $'
+    echo '	$Id: vbox.sh,v 1.97 2019/03/11 10:50:11 jim Exp $'
     echo "	see http://vboxsvc.sourceforge.net/ for possible updates"
     echo "	building upon work (C) 2009 by Alexandre Dumont"
     echo "This method script supports SMF methods: { start | stop }"

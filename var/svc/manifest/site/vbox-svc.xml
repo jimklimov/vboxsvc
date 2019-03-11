@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 <!--
-	$Id: vbox-svc.xml,v 1.39 2015/04/07 12:47:35 jim Exp $
+	$Id: vbox-svc.xml,v 1.40 2019/03/11 10:50:10 jim Exp $
 	This manifest is distributed under the following MIT License terms:
 
 	Copyright (c) 2009 Alexandre Dumont

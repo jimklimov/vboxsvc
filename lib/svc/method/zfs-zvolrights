@@ -4,7 +4,7 @@
 ### (they are reset to root:root by default)
 ### Can be used on command-line or as an SMF method script.
 ### May be portable to non-Solaris OSes.
-### $Id: zfs-zvolrights,v 1.4 2012/12/05 17:09:50 jim Exp $
+### $Id: zfs-zvolrights,v 1.5 2019/03/11 10:50:11 jim Exp $
 
 # Maintained by Jim Klimov at:
 #   http://vboxsvc.sourceforge.net/
