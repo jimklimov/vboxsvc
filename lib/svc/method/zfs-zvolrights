@@ -1,0 +1,523 @@
+#!/bin/bash
+
+### This script allows to retain ZVOL access rights across reboots
+### (they are reset to root:root by default)
+### Can be used on command-line or as an SMF method script.
+### May be portable to non-Solaris OSes.
+### $Id: zfs-zvolrights,v 1.4 2012/12/05 17:09:50 jim Exp $
+
+# Maintained by Jim Klimov at:
+#   http://vboxsvc.sourceforge.net/
+#
+# This SMF method is distributed under the following MIT License terms:
+#
+# (C) 2012 by Jim Klimov, JCS COS&HT
+#
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation
+# files (the "Software"), to deal in the Software without
+# restriction, including without limitation the rights to use,
+# copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following
+# conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+
+SMF_FMRI_ORIG="$SMF_FMRI"
+SMF_FMRI="${SMF_FMRI:-svc:/system/filesystem/zfs/zvolrights:default}"
+SMF_BASE="`echo "$SMF_FMRI" | sed 's/^\(.*\:.*\)\(\:.*\)$/\1/' | sed 's,^svc:/,,'`"
+SMF_INST="$( echo $SMF_FMRI | cut -d: -f3 )"
+### Note: the create-service routine creates a "default" instance anyway
+
+[ /lib/svc/share/smf_include.sh ] && . /lib/svc/share/smf_include.sh
+if [ $? != 0 ]; then
+        SMF_EXIT_OK=0
+        SMF_EXIT_ERR_FATAL=95
+        SMF_EXIT_ERR_CONFIG=96
+        SMF_EXIT_MON_DEGRADE=97
+        SMF_EXIT_MON_OFFLINE=98
+        SMF_EXIT_ERR_NOSMF=99
+        SMF_EXIT_ERR_PERM=100
+fi
+
+export PATH=/usr/sbin:/usr/bin:${PATH}
+export LANG=C
+export LC_ALL=C
+
+### Don't process these zvols
+### TODO: SMFize this
+IGNORELIST=${IGNORELIST:-rpool/swap rpool/dump}
+
+getACL() {
+    ### Get an FS object's ACL printout and merge many lines with commas
+    ### Follow symlinks if we must
+    ls -VLd "$1" | tail +2 | sed -e 's/^ *//' | tr '\n' ,
+}
+
+### Get an example of a ZVOL ACL which is not manually mangled
+### TODO: SMFize this?
+[ x"$TRIVIAL_ACL" != x ] || \
+TRIVIAL_ACL="`getACL /dev/zvol/dsk/rpool/swap`" || \
+TRIVIAL_ACL="`getACL /dev/zvol/rdsk/rpool/swap`" || \
+TRIVIAL_ACL="`getACL /dev/zvol/dsk/rpool/dump`" || \
+TRIVIAL_ACL="`getACL /dev/zvol/rdsk/rpool/dump`" || \
+TRIVIAL_ACL=""
+
+getCHMOD() {
+    ### Get an FS object's POSIX access rights in chmod long format
+    ### Follow symlinks if we must
+    ls -lLd "$1" | awk '{print $1}' | sed 's/^.\(...\)\(...\)\(...\).*$/u=\1,g=\2,o=\3/' | sed 's/-//g'
+}
+
+### Get an example of a ZVOL CHMOD string which is not manually mangled
+### TODO: SMFize this?
+[ x"$TRIVIAL_CHMOD" != x ] || \
+TRIVIAL_CHMOD="`getCHMOD /dev/zvol/dsk/rpool/swap`" || \
+TRIVIAL_CHMOD="`getCHMOD /dev/zvol/rdsk/rpool/swap`" || \
+TRIVIAL_CHMOD="`getCHMOD /dev/zvol/dsk/rpool/dump`" || \
+TRIVIAL_CHMOD="`getCHMOD /dev/zvol/rdsk/rpool/dump`" || \
+TRIVIAL_CHMOD="u=rw,g=,o="
+
+do_get_attrs_zvol() {
+    ### Sets variables with values of User, Group, Chmod and Acl strings
+    ### from Attributes of the dataset, and Dsk and Rdsk filesystem nodes.
+	ZVOL="$1"
+
+	### Values received from ZFS Attributes
+	AU="`zfs list -H -o owner:user "$ZVOL"`" || AU=""
+	[ x"$AU" = x- ] && AU=""
+	AG="`zfs list -H -o owner:group "$ZVOL"`" || AG=""
+	[ x"$AG" = x- ] && AG=""
+	AC="`zfs list -H -o owner:chmod "$ZVOL"`" || AC=""
+	[ x"$AC" = x- ] && AC=""
+	AA="`zfs list -H -o owner:acl "$ZVOL"`" || AA=""
+	[ x"$AA" = x- ] && AA=""
+
+	### Values received from DSK filesystem nodes
+	DU="`ls -lLd "/dev/zvol/dsk/$ZVOL" | awk '{print $3}'`" || DU=""
+	DG="`ls -lLd "/dev/zvol/dsk/$ZVOL" | awk '{print $4}'`" || DG=""
+	DC="`getCHMOD "/dev/zvol/dsk/$ZVOL"`" || DC=""
+	DA="`getACL "/dev/zvol/dsk/$ZVOL"`" || DA=""
+
+	### Values received from RDSK filesystem nodes
+	RU="`ls -lLd "/dev/zvol/rdsk/$ZVOL" | awk '{print $3}'`" || RU=""
+	RG="`ls -lLd "/dev/zvol/rdsk/$ZVOL" | awk '{print $4}'`" || RG=""
+	RC="`getCHMOD "/dev/zvol/rdsk/$ZVOL"`" || RC=""
+	RA="`getACL "/dev/zvol/rdsk/$ZVOL"`" || RA=""
+}
+
+do_list_attrs_zvol() {
+### Simply list the ZFS-props and filesystem attrs for the zvol
+	do_get_attrs_zvol "$1"
+
+	echo "=== FORCE: $FORCE;	ZVOL name: $ZVOL"
+	echo "ZFS:	'$AU:$AG'	'$AC'	'$AA'"
+	echo "DSK:	'$DU:$DG'	'$DC'	'$DA'"
+	echo "RDSK:	'$RU:$RG'	'$RC'	'$RA'"
+}
+
+do_set_fileattrs() {
+    ### Loop over existing zvols (except exempt ones) and set FS attrs on devs
+    zfs list -t volume -H -o name | while read ZVOL; do
+	for Z in $IGNORELIST; do
+	    if [ x"$Z" = x"$ZVOL" ]; then
+		[ x"$DEBUG" = xyes ] && echo "INFO: Requested not to touch ZVOL '$Z', skipping!" >&2
+		continue 2
+	    fi
+	done
+	do_set_fileattrs_zvol "$ZVOL"
+    done
+}
+
+do_set_fileattrs_zvol() {
+    ### This routine sets filesystem attributes for device nodes of a ZVOL
+    ### based on defined non-empty values of its "owner:*" zfs attributes
+	ZVOL="$1"
+
+	do_get_attrs_zvol "$ZVOL"
+
+	if [ x"$AU" != x ]; then
+	    [ x"$DEBUG" = xyes ] && echo "=== Setting   '$ZVOL' user to '$AU'..."
+	    if [ x"$AU" != x"$DU" ]; then
+		[ x"$DEBUG" = xyes ] || \
+		    echo "=== Setting   '$ZVOL'  DSK user to '$AU'..."
+		chown "$AU" "/dev/zvol/dsk/$ZVOL"
+	    else
+		[ x"$DEBUG" = xyes ] && echo "=====  DSK already set, skip"
+	    fi
+
+	    if [ x"$AU" != x"$RU" ]; then
+		[ x"$DEBUG" = xyes ] || \
+		    echo "=== Setting   '$ZVOL' RDSK user to '$AU'..."
+		chown "$AU" "/dev/zvol/rdsk/$ZVOL"
+	    else
+		[ x"$DEBUG" = xyes ] && echo "===== RDSK already set, skip"
+	    fi
+	fi
+
+	if [ x"$AG" != x ]; then
+	    [ x"$DEBUG" = xyes ] && echo "=== Setting   '$ZVOL' group to '$AG'..."
+	    if [ x"$AG" != x"$DG" ]; then
+		[ x"$DEBUG" = xyes ] || \
+		    echo "=== Setting   '$ZVOL'  DSK group to '$AG'..."
+		chgrp "$AG" "/dev/zvol/dsk/$ZVOL"
+	    else
+		[ x"$DEBUG" = xyes ] && echo "=====  DSK already set, skip"
+	    fi
+
+	    if [ x"$AG" != x"$RG" ]; then
+		[ x"$DEBUG" = xyes ] || \
+		    echo "=== Setting   '$ZVOL' RDSK group to '$AG'..."
+		chgrp "$AG" "/dev/zvol/rdsk/$ZVOL"
+	    else
+		[ x"$DEBUG" = xyes ] && echo "===== RDSK already set, skip"
+	    fi
+	fi
+
+	if [ x"$AC" != x ]; then
+	    [ x"$DEBUG" = xyes ] && echo "=== Chmodding '$ZVOL' to '$AC'..."
+	    if [ x"$AC" != x"$DC" ]; then
+		[ x"$DEBUG" = xyes ] || \
+		    echo "=== Chmodding '$ZVOL'  DSK to '$AC'..."
+		chmod "$AC" "/dev/zvol/dsk/$ZVOL"
+	    else
+		[ x"$DEBUG" = xyes ] && echo "=====  DSK already set, skip"
+	    fi
+
+	    if [ x"$AC" != x"$RC" ]; then
+		[ x"$DEBUG" = xyes ] || \
+		    echo "=== Chmodding '$ZVOL' RDSK to '$AC'..."
+		chmod "$AC" "/dev/zvol/rdsk/$ZVOL"
+	    else
+		[ x"$DEBUG" = xyes ] && echo "===== RDSK already set, skip"
+	    fi
+	fi
+
+	if [ x"$AA" != x ]; then
+	    [ x"$DEBUG" = xyes ] && echo "=== Setting   '$ZVOL' ACL to 'A=$AA'..."
+	    if [ x"$AA" != x"$DA" ]; then
+		[ x"$DEBUG" = xyes ] || \
+		    echo "=== Setting   '$ZVOL'  DSK ACL to 'A=$AA'..."
+		chmod A="$AA" "/dev/zvol/dsk/$ZVOL"
+	    else
+		[ x"$DEBUG" = xyes ] && echo "=====  DSK already set, skip"
+	    fi
+
+	    if [ x"$AA" != x"$RA" ]; then
+		[ x"$DEBUG" = xyes ] || \
+		    echo "=== Setting   '$ZVOL' RDSK ACL to 'A=$AA'..."
+		chmod A="$AA" "/dev/zvol/rdsk/$ZVOL"
+	    else
+		[ x"$DEBUG" = xyes ] && echo "===== RDSK already set, skip"
+	    fi
+	fi
+}
+
+do_set_zfsattrs() {
+    ### Loop over existing zvols (except exempt ones) and set ZFS attrs
+    zfs list -t volume -H -o name | while read ZVOL; do
+	for Z in $IGNORELIST; do
+	    if [ x"$Z" = x"$ZVOL" ]; then
+		[ x"$DEBUG" = xyes ] && echo "INFO: Requested not to touch ZVOL '$Z', skipping!" >&2
+		continue 2
+	    fi
+	done
+	FORCE=$FORCE do_set_zfsattrs_zvol "$ZVOL"
+    done
+}
+
+do_set_zfsattrs_zvol() {
+    ### This routine copies filesystem attributes from device nodes of a ZVOL
+    ### into "owner:*" values of its zfs attributes.
+    ### If "FORCE=yes" then all values are processed, otherwise we skip ZVOLs
+    ### whose device files are currently owned by "root:root" or "root:sys".
+    ### TODO? Have the user set a special attribute on those ZVOLs he wants
+    ### managed by this script, i.e. "owner:manageme=true", and skip other
+    ### zvols unconditionally?
+
+	ZVOL="$1"
+	do_get_attrs_zvol "$ZVOL"
+	[ x"$DA" = x"$TRIVIAL_ACL" ] && DA=""
+	[ x"$RA" = x"$TRIVIAL_ACL" ] && RA=""
+
+	### Is DSK owned by root (default rights)?
+	DR=no
+	if [ x"$DU:$DG" = x"root:root" \
+	  -o x"$DU:$DG" = x"root:sys" \
+	    ]; then DR=yes; fi
+	if [ "$DR" = yes -a x"$FORCE" != xyes ]; then
+	    [ x"$DEBUG" = xyes ] && echo "=== For '$ZVOL'  DSK node is owned by '$DU:$DG' (is default) and getting options from FS is not enforced"
+	    DR=no
+	fi
+
+	### Is RDSK owned by root (default rights)?
+	RR=no
+	if [ x"$RU:$RG" = x"root:root" \
+	  -o x"$RU:$RG" = x"root:sys" \
+	    ]; then RR=yes; fi
+	if [ "$RR" = yes -a x"$FORCE" != xyes ]; then
+	    [ x"$DEBUG" = xyes ] && echo "=== For '$ZVOL' RDSK node is owned by '$RU:$RG' (is default) and getting options from FS is not enforced"
+	    RR=no
+	fi
+
+	### ZU, ZG, ZC and ZA values are the ones which we'll ultimately set
+	### for the dataset into its zfs properties.
+	ZU=""; ZG=""; ZC=""; ZA=""
+
+	### The intent of the logic below is to set ZFS attributes only if
+	### a value is not already set, and if the filesystem value is not
+	### a default value. If enforcement is in place, we try to pick a
+	### non-default value from the two options we have (DSK and RDSK)
+	### to override the ZFS attribute (if any).
+	### TODO: what if DSK and RDSK values are in conflict?
+	### TODO: what if non-default values in ZFS and on-disk (user change,
+	###       chmod change, etc.)?
+	if [ x"$AU" = x -o x"$FORCE" = xyes ]; then
+	    [ "$DR" = yes -a "$RR" = no ] && ZU="$RU"
+	    [ "$RR" = yes -a "$DR" = no ] && ZU="$DU"
+	    if [ "$RR" = no -a "$DR" = no ]; then
+		### Possibly, "root:anothergroup"
+		if [ x"$DU" = x"$RU" -a x"$DU" != xroot ]; then
+		    ZU="$DU"
+		else
+		    [ x"$RU" != xroot ] && ZU="$RU"
+		    [ x"$DU" != xroot ] && ZU="$DU"
+		fi
+	    fi
+	    [ "$RR" = yes -a "$DR" = yes ] && ZU=""
+	    [ x"$FORCE" = xyes -a x"$ZU" = x ] && ZU=root
+	fi
+
+	if [ x"$AG" = x -o x"$FORCE" = xyes ]; then
+	    [ "$DR" = yes -a "$RR" = no ] && ZG="$RG"
+	    [ "$RR" = yes -a "$DR" = no ] && ZG="$DG"
+	    if [ "$RR" = no -a "$DR" = no ]; then
+		### Possibly, "root:anothergroup"
+		if [ x"$DG" = x"$RG" \
+		  -a x"$DG" != xroot \
+		  -a x"$DG" != xsys ]; then
+		    ZG="$DG"
+		else
+		    [ x"$RG" != xroot -a x"$RG" != xsys ] && ZG="$RG"
+		    [ x"$DG" != xroot -a x"$DG" != xsys ] && ZG="$DG"
+		fi
+	    fi
+	    [ "$RR" = yes -a "$DR" = yes ] && ZG=""
+	    [ x"$FORCE" = xyes -a x"$ZG" = x ] && ZG=sys
+	fi
+
+	### TODO: If disk user is non-root and the chmod/ACL are non-default
+	### and different from the values in ZFS attributes - what to do?
+	### Running with FORCE=yes does solve the problem (sets from disk).
+	if [ x"$AC" = x -o x"$FORCE" = xyes ]; then
+	    [ "$DR" = yes -a "$RR" = no ] && ZC="$RC"
+	    [ "$RR" = yes -a "$DR" = no ] && ZC="$DC"
+	    if [ "$RR" = no -a "$DR" = no ]; then
+		[ x"$RC" != x"$TRIVIAL_CHMOD" ] && ZC="$RC"
+		[ x"$DC" != x"$TRIVIAL_CHMOD" ] && ZC="$DC"
+	    fi
+	    [ "$RR" = yes -a "$DR" = yes ] && ZC=""
+	    [ x"$FORCE" = xyes -a x"$ZC" = x ] && ZC="$TRIVIAL_CHMOD"
+	fi
+
+	if [ x"$AA" = x -o x"$FORCE" = xyes ]; then
+	    [ "$DR" = yes -a "$RR" = no ] && ZA="$RA"
+	    [ "$RR" = yes -a "$DR" = no ] && ZA="$DA"
+	    if [ "$RR" = no -a "$DR" = no ]; then
+		[ x"$RA" != x"$TRIVIAL_ACL" ] && ZA="$RA"
+		[ x"$DA" != x"$TRIVIAL_ACL" ] && ZA="$DA"
+	    fi
+	    [ "$RR" = yes -a "$DR" = yes ] && ZA=""
+	    [ x"$FORCE" = xyes -a x"$ZA" = x ] && ZA="$TRIVIAL_ACL"
+	fi
+
+	[ x"$ZU" != x -o x"$ZG" != x -o x"$ZC" != x -o x"$ZA" != x ] && \
+	echo "=== For '$ZVOL' will save these attrs: user:group='${ZU:-$AU(old)}:${ZG:-$AG(old)}'; chmod='${ZC:-$AC(old)}'; acl='${ZA:-$AA(old)}'"
+
+	[ x"$ZU" != x ] && zfs set owner:user="$ZU" "$ZVOL" &
+	[ x"$ZG" != x ] && zfs set owner:group="$ZG" "$ZVOL" &
+	[ x"$ZC" != x ] && zfs set owner:chmod="$ZC" "$ZVOL" &
+	[ x"$ZA" != x ] && zfs set owner:acl="$ZA" "$ZVOL" &
+}
+
+case "$1" in
+start)
+    do_set_fileattrs
+    true
+    ;;
+stop)
+    FORCE=no do_set_zfsattrs
+    wait
+    true
+    ;;
+restart|refresh)
+    FORCE=no do_set_zfsattrs
+    wait
+    do_set_fileattrs
+    true
+    ;;
+initialize)
+    FORCE=yes do_set_zfsattrs
+    wait
+    true
+    ;;
+do_set_fileattrs_zvol|setdev)
+    shift
+    [ $# -gt 0 ] && \
+    for V in "$@"; do
+        do_set_fileattrs_zvol "$V"
+    done
+    ;;
+do_set_zfsattrs_zvol|setzfs)
+    shift
+    [ $# -gt 0 ] && \
+    for V in "$@"; do
+        do_list_attrs_zvol "$V"
+        do_set_zfsattrs_zvol "$V"
+        wait
+	echo ""
+    done
+    ;;
+do_list_attrs_zvol|list)
+    shift
+    if [ $# -gt 0 ]; then
+	for V in "$@"; do
+    	    do_list_attrs_zvol "$V"
+	done
+    else
+	zfs list -t volume -H -o name | while read V; do
+    	    do_list_attrs_zvol "$V"
+	done
+    fi
+    ;;
+clear)
+    shift
+    [ $# -gt 0 ] && \
+    for V in "$@"; do
+	### TODO: check for not-empty inheritance and set to empty strings?
+        zfs inherit owner:user "$V"
+        zfs inherit owner:group "$V"
+        zfs inherit owner:chmod "$V"
+        zfs inherit owner:acl "$V"
+    done
+    ;;
+create-service)
+    LOGFILE="/var/svc/log/`echo "$SMF_BASE" | sed 's,/,-,g'`:$SMF_INST.log"
+    touch "$LOGFILE"
+
+    echo "=== Registering SMF service '$SMF_FMRI'..."
+    svccfg -v << EOF
+add $SMF_BASE
+select $SMF_BASE
+#delprop multi-user
+addpg multi-user dependency
+setprop multi-user/entities = fmri: svc:/milestone/multi-user
+setprop multi-user/grouping = astring: require_all
+setprop multi-user/restart_on = astring: none
+setprop multi-user/type = astring: service
+#delprop startd
+addpg startd framework
+setprop startd/duration = astring: transient
+#delprop start
+addpg method_context framework
+setprop method_context/user = astring: root
+setprop method_context/group = astring: root
+setprop method_context/use_profile = boolean: false
+setprop method_context/working_directory = astring: /var/tmp
+addpg start method
+setprop start/type = astring: method
+setprop start/exec = astring: "/lib/svc/method/zfs-zvolrights start"
+#setprop start/user = astring: root
+#setprop start/group = astring: root
+setprop start/timeout_seconds = count: 0
+#delprop stop
+addpg stop method
+setprop stop/type = astring: method
+setprop stop/exec = astring: "/lib/svc/method/zfs-zvolrights stop"
+#setprop stop/user = astring: root
+#setprop stop/group = astring: root
+setprop stop/timeout_seconds = count: 0
+#delprop refresh
+addpg refresh method
+setprop refresh/type = astring: method
+setprop refresh/exec = astring: "/lib/svc/method/zfs-zvolrights refresh"
+#setprop refresh/user = astring: root
+#setprop refresh/group = astring: root
+setprop refresh/timeout_seconds = count: 0
+#delprop dependents
+addpg dependents framework
+setprop dependents/vbox = fmri: svc:/site/xvm/vbox
+EOF
+
+    ### Didn't find a better way to create and enable a default instance
+    svccfg export "$SMF_BASE" | while IFS= read LINE; do
+    case "$LINE" in
+	*'<service '*)
+	    echo "$LINE"
+	    echo '<create_default_instance enabled="true" />'
+    	    echo '<single_instance />'
+	    ;;
+	*)  echo "$LINE" ;;
+    esac; done > /tmp/$$.xml
+    svccfg delete -f "$SMF_BASE"
+    svccfg import /tmp/$$.xml
+    rm -f /tmp/$$.xml
+
+    echo "=== Apply new config"
+    svcadm refresh "$SMF_FMRI"
+    svcadm enable "$SMF_FMRI"
+    echo "=== Base service:"
+    svcprop "$SMF_BASE"
+    echo "=== Instance:"
+    svcprop "$SMF_FMRI"
+    svcs -a | grep "$SMF_BASE"
+    ;;
+delete-service)
+    if svcs -a | grep "$SMF_BASE" || [ x"$FORCE" = xyes ]; then
+        echo "=== Unregistering SMF service '$SMF_FMRI'..."
+	svcadm disable "$SMF_FMRI"
+	svccfg delete -f "$SMF_FMRI"
+        svccfg delete -f "$SMF_BASE"
+	svcs -a | grep "$SMF_BASE"
+    fi
+    ;;
+*)
+    echo "$0: This script allows to retain ZVOL access rights across reboots."
+    echo "Can be used on command-line or as an SMF method script."
+    echo "	export DEBUG=yes  for more verbosity."
+    echo "Usage:"
+    echo "	start	Starts the service (assigns rights recorded in ZVOL"
+    echo "		attributes to actual ZVOLs and quits)"
+    echo "	stop	Copies current access right definitions into the ZVOL"
+    echo "		attributes unless they seem default (root:root) and a"
+    echo "		different value is already saved in the attribute"
+    echo "	refresh	Does stop and start from above"
+    echo "	initialize	Copies current access right definitions into"
+    echo "		ZVOL attributes verbatim (resetting to defaults if that"
+    echo "		is the current OS configuration) for all ZVOLs"
+    echo "	list [zvol...]	Lists the current values of the three known"
+    echo "		variants of User, Group, Chmod and Acl"
+    echo "	clear zvol [zvol...]	For the list of ZVOLs, tries to wipe"
+    echo "		the attribute settings by inheriting them"
+    echo "	setzfs zvol [zvol...]	Set ZFS attrs from current DEVFS info"
+    echo "		export FORCE=yes to override values already in ZFS attrs"
+    echo "	setdev zvol [zvol...]	Set DEVFS attrs from current ZFS info"
+    echo "	create-service	Register this script as an SMF service"
+    echo "	delete-service	Remove registration of this script as an SMF service"
+    echo "NOTE: The start, stop, refresh and initialize methods act on all ZVOLs in"
+    echo "the system, except for a list that can be set in IGNORELIST, defaults to:"
+    echo "  $IGNORELIST"
+    ;;
+esac
+

@@ -1,0 +1,72 @@
+TEST:
+
+Actually test VMSVCCHECK (checking of some services inside a VM from
+host via custom hook scripts) - done for SSH banner checks.
+
+TEST setting of host timezone not equal to user/OS default timezone,
+i.e. run VMs as UTC whatever the user's own preference is.
+
+TEST zfs snapshots in various combinations (dataset names and pathnames,
+set in variables for instance and service levels, mix with auto);
+currently tested only as autodetected pathnames for local and NFS-backed
+ZFS datasets (individual per-VM), for root-owned and user-owned VMs.
+
+TEST "start-force" action - should leave interactive VMs running with
+GUI, but should start non-running any VMs headless regardless of SMF
+properties.
+
+TEST "is_dualboot" and "is_interactive" properties (true and false)
+with various (re)start_*_vm values. VM should not start unless explicitly
+requested.
+
+
+
+DEVELOP or DESIGN:
+
+Allow to set CPU Affinity in some manner... (invoke containers, projects
+and other Solaris features? Maybe that can be done by SMF without our help)
+
+Change PKG paths to /opt/VirtualBox/vboxsvc (for sparse-root zones)?
+May be useless since one common kernel-side part of VirtualBox is
+installed and runs in global zone anyway.
+
+Add a command-line option to configure a new VM as an SMF instance
+and set typical properties?.. Maybe, several predefined profiles for
+headless, interactive and dualboot VMs?
+
+(Add an option to...) Make sure the VM dies (or is saved) when KICKER 
+breaks out of the service to go into maintenance, service disabling, etc. 
+Don't leave VMs running when their SMF instance is reported offline 
+(we have to do this manually for transient services).
+
+For non-root VMs using zvols and other devices - see if the device names
+are detectable and (configurably!) try to chown the /dev/*/*dsk nodes
+before VM startup. For zvols in particular, the nodes can be recreated
+upon pool import and may thus become root-owned again.
+See also: zfs-zvolrights script/SMF service (i.e. kick it before VM start?)
+
+Seperate VM naming and SMF instance naming (only equating them by default)
+and allow to use imported VM names with spaces in name, etc. For the sake
+of ease of management, allow both names in command-line mode if they are
+not ambiguous (map to only one VM and one SMF instance respectively).
+
+Create a default RBAC configuration to ease delegation of VM control to
+non-root users, possibly following zfs-auto-snapshot. Experiment with:
+1) Restricting control to particular VM(s) only, maybe by making many
+   RBAC profiles per-user and assigning these to manage an SMF instance;
+2) Also see about restricting changes to some fields (i.e. VM name, uid
+   for method context, etc);
+3) Assigning the RBAC profile to members of a POSIX group (vboxusers)
+4) Layering of profiles - a VBox admin to give out rights and configure
+   per-VM services, and end-users who may only run VMs and change some
+   certain set of parameters - not more.
+Whatever the achievable results - document them! :)
+
+Add SMF attributes to set up VNC consoles for VBoxHeadless VMs, if this
+happens to be supported by current VirtualBox software version; these
+attrs should only contain the port, optional password and enable flag,
+since the actual syntax can vary for different virtualbox releases 
+(check flags in help message?) 
+ToTHINK: What should startGUI action do when VNC is available?
+Same as usual? Spawn a vnc viewer (detect which?) Spit out a message?
+

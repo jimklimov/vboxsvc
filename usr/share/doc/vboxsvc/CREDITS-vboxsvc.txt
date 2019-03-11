@@ -1,0 +1,18 @@
+Credits are where credits are due
+
+* Alexandre Dumont - initial author of a simple SMF method and manifest, which
+  grew into this project.
+* sjorge - idea and initial implementation of a stub service to delay startup
+  of all VMs as a new common dependency (vbox-delay-on-boot.xml).
+* Edward Ned Harvey - idea and constructive discussion for zfs-zvolrights - a
+  script to retain POSIX/ACL access rights on device nodes owned by non-roots
+  (notably user-owned ZFS volumes) as a workaround of Solaris/OI deficiency.
+* Dimitri Asarowski - revision of the installation documentation which led to
+  a number of bugfixes in packaging and code.
+* Gordon Ross - initial script for connections to serial console with socat
+* Active users of VirtualBox forums and OpenIndiana mail-lists whose requests,
+  questions and comments led and lead to further development of this package.
+
+Thanks to all,
+//Jim Klimov - current package author and maintainer
+

@@ -1,0 +1,22 @@
+i pkginfo=./pkginfo
+i depend
+d none var 0755 root sys
+d none var/svc 0755 root sys
+d none var/svc/manifest 0755 root sys
+d none var/svc/manifest/site 0755 root sys
+f none var/svc/manifest/site/vbox-svc.xml 0644 root sys
+f none var/svc/manifest/site/vbox-delay-on-boot.xml 0644 root sys
+d none lib 0755 root bin
+d none lib/svc 0755 root bin
+d none lib/svc/method 0755 root bin
+f none lib/svc/method/vbox.sh 0755 root sys
+f none lib/svc/method/zfs-zvolrights 0755 root sys
+d none usr 0755 root sys
+d none usr/share 0755 root sys
+d none usr/share/doc 0755 root other
+d none usr/share/doc/vboxsvc 0755 root sys
+f none usr/share/doc/vboxsvc/README-vboxsvc.txt 0644 root sys
+f none usr/share/doc/vboxsvc/README-zvolrights.txt 0644 root sys
+f none usr/share/doc/vboxsvc/TODO-vboxsvc.txt 0644 root sys
+f none usr/share/doc/vboxsvc/CREDITS-vboxsvc.txt 0644 root sys
+
