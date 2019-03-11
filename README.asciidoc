@@ -1,0 +1,67 @@
+vboxsvc
+=======
+
+SMF service wrapper for Sun/Oracle VirtualBox under Sun/Oracle Solaris 10+
+and OpenSolaris builds (including OpenIndiana and illumos).
+
+Detailed project description is available in the README file:
+[usr/share/doc/vboxsvc/README-vboxsvc.txt]
+
+Discuss and get help in VirtualBox Forum thread "[Free as in beer] SMF service
+for VirtualBox VM's": [https://forums.virtualbox.org/viewtopic.php?f=11&t=33249]
+
+Features
+~~~~~~~~
+
+* Control VirtualBox VMs as Solaris SMF service instances, including VMs
+  owned by unprivileged users and VMs running in Solaris local zones for
+  extra resource control by the host OS
+* Bring up a VBoxHeadless VM to manage it via X11 GUI console, then resume
+  it as Solaris SMF service instance (service interrupted to savestate and
+  resume the VM).
+* Connect to VM serial consoles (without service interruptions).
+* You can set up SMF dependencies between VM instances and system resources
+  (as other SMF services) to ensure orderly startup and shutdown with the
+  SMF in Solaris-based OSes
+* "Hooks" to set up an external script to monitor that the VM is actually
+  alive inside and does something useful. VM can be rebooted or placed into
+  SMF maintenance if it is not really working.
+  * Since release 0.16 the monitoring script can be used to delay completion
+    of the VM's SMF start method to better ensure proper startup of SMF
+    dependencies.
+* Main new feature of release 0.15 is the ability of vbox.sh to create snapshots
+  of ZFS datasets backing the VM and/or its data after shutdown, before startup,
+  or on command-line request. Datasets containing the VM config files, VirtualBox
+  snapshot files, and HDD image files, can be found automatically.
+  * Since release 0.17, local ZVOLs dedicated to a VM as a virtual HDD (via
+    VirtualBox internalcommands) can also be detected. Other datasets (such
+    as raw ZVOLs passed with other methods -- i.e. iSCSI) can be listed in
+    a special SMF attribute
+* Different "VM hardware clock" timezones can be configured for each VM
+  (unambiguous "UTC" is recommended however, generally in IT)
+* Some other command-line features available (graceful poweroff, soft ACPI
+  reboot, hard reset, rude poweroff, status check, take ZFS snapshots of
+  backing storage, etc.)
+* Recently tested with current VirtualBox 4.2.0 release and OpenIndiana
+  OI_151a5 host system, most things just work ;)
+  * NOTE: For VirtualBox 4.x the 0.17 dev SVN version of the script is needed,
+    or a manual site-local tweak, to account for change in VBox command-line
+    parameters -- vrdp vs. vrde, if you use NICE)
+* Interactive and "dual-boot" VMs are also supported since release 0.17,
+  so that the user manually starts up the interactive VM when needed,
+  and SMF shuts it down properly when needed. A new `startgui -fg` mode
+  and its symlink-based shortcuts allow the controlling script to remain
+  in the terminal shell (or spawn a dedicated xterm) and when this shell
+  is interrupted -- the VM gets properly shut down, savestated or how ever
+  you configure it.
+* For non-root users running VirtualBox with delegated local ZFS Volumes,
+  a new service script was added in release 0.17 to save and restore via
+  ZFS properties the customized (non-default) ZVOL device node ownership
+  and access-rights attributes. Solaris and illumos currently lack a
+  kernel-based capability to do this automatically :(
+  See [usr/share/doc/vboxsvc/README-zvolrights.txt] for more details,
+  including how to enable this service on your system (not done by default).
+* Version 0.18 is currently in development -- grab a tarball from SVN or
+  GitHub to see the bleeding-edge new features! URLs:
+  * [http://vboxsvc.svn.sourceforge.net/viewvc/vboxsvc/?view=tar]
+  * [https://github.com/jimklimov/vboxsvc]
