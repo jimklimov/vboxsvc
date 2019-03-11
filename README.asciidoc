@@ -11,6 +11,14 @@ Discuss and get help in VirtualBox Forum thread
 link:https://forums.virtualbox.org/viewtopic.php?f=11&t=33249["[Free
 as in beer\] SMF service for VirtualBox VM's"]
 
+A replica is hosted (and would likely be the HEAD of development soon)
+at https://github.com/jimklimov/vboxsvc
+
+See also https://github.com/jimklimov/vboxconfig_sh.git for tweaks needed
+to set up Oracle VirtualBox for Solaris packages (4.x, 5.0.x) on illumos
+hosts. For recent OpenIndiana and OmniOS (since 2019) there are packages
+provided by distributions, and these tweaks are not required then.
+
 Features
 ~~~~~~~~
 
