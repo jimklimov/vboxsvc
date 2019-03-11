@@ -26,14 +26,14 @@ Features
 * "Hooks" to set up an external script to monitor that the VM is actually
   alive inside and does something useful. VM can be rebooted or placed into
   SMF maintenance if it is not really working.
-  * Since release 0.16 the monitoring script can be used to delay completion
+  ** Since release 0.16 the monitoring script can be used to delay completion
     of the VM's SMF start method to better ensure proper startup of SMF
     dependencies.
 * Main new feature of release 0.15 is the ability of vbox.sh to create snapshots
   of ZFS datasets backing the VM and/or its data after shutdown, before startup,
   or on command-line request. Datasets containing the VM config files, VirtualBox
   snapshot files, and HDD image files, can be found automatically.
-  * Since release 0.17, local ZVOLs dedicated to a VM as a virtual HDD (via
+  ** Since release 0.17, local ZVOLs dedicated to a VM as a virtual HDD (via
     VirtualBox internalcommands) can also be detected. Other datasets (such
     as raw ZVOLs passed with other methods -- i.e. iSCSI) can be listed in
     a special SMF attribute
@@ -44,17 +44,17 @@ Features
   backing storage, etc.)
 * This project is in development since VirtualBox 2.x was current :)
   Relatively recently tested systems included:
-  * VirtualBox 3.0.12 on host systems from early Solaris 10 to OpenSolaris
+  ** VirtualBox 3.0.12 on host systems from early Solaris 10 to OpenSolaris
     SXCE snv_117 (still Sun) and up to OpenIndiana OI_151a8 (illumos ~2013)
-  * VirtualBox 4.2.0 release and OpenIndiana OI_151a5 host system (~2012),
+  ** VirtualBox 4.2.0 release and OpenIndiana OI_151a5 host system (~2012),
     most things just work ;)
-    * NOTE: For VirtualBox 4.x the 0.17+ dev SVN version of the script is
+    *** NOTE: For VirtualBox 4.x the 0.17+ dev SVN version of the script is
       needed, or a manual site-local tweak for earlier releases, to account
       for change in VBox command-line parameters -- vrdp vs. vrde, if you
       use NICE settings)
-  * VirtualBox 5.0.40 on OpenIndiana "hipster" rolling-release (tested/used
+  ** VirtualBox 5.0.40 on OpenIndiana "hipster" rolling-release (tested/used
     since 2017 with 0.18 dev version)
-  * VirtualBox 5.2.24 built and provided by OpenIndiana "hipster" native
+  ** VirtualBox 5.2.24 built and provided by OpenIndiana "hipster" native
     packaging since early 2019
 * Interactive and "dual-boot" VMs are also supported since release 0.17,
   so that the user manually starts up the interactive VM when needed,
@@ -72,8 +72,9 @@ Features
   including how to enable this service on your system (not done by default).
 * Version 0.18 is currently in development -- grab a tarball from SVN or
   GitHub to see the bleeding-edge new features! URLs:
-  * [http://vboxsvc.svn.sourceforge.net/viewvc/vboxsvc/?view=tar]
-  * [https://github.com/jimklimov/vboxsvc]
+  ** [http://vboxsvc.svn.sourceforge.net/viewvc/vboxsvc/?view=tar]
+  ** [https://github.com/jimklimov/vboxsvc]
 
-Hope this helps you tame your virtual boxes!
+Hope this project helps you tame your virtual boxes!
+
 Jim Klimov
