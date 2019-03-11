@@ -180,10 +180,12 @@ Updates in release 0.17 (2013-05-10):
   hosts which use ZFS volumes to back VM images and run VMs with unprivileged
   user accounts. More detail in its own README file.
 
-Updates in release 0.18 (in progress, 2015-04-07):
+Updates in release 0.18 (in progress, 2015-04-07, 2019-03-10):
 * Added options to kill the VM processes during reboot or poweroff requests
 * Added samples of RBAC config into XML manifest for service instances
 * Fixed unportable negative return/exit codes, using proper SMF_EXIT_* now
+* Added sanity checks and warnings about requiring too many optional status
+  checks to be done too infrequently over an inadequately short timeframe
 
 All thinkable behaviors and variables have been parametrized with SMF
 service properties (group "vm/" or system props in groups "start/",
