@@ -180,12 +180,19 @@ Updates in release 0.17 (2013-05-10):
   hosts which use ZFS volumes to back VM images and run VMs with unprivileged
   user accounts. More detail in its own README file.
 
-Updates in release 0.18 (in progress, 2015-04-07, 2019-03-10):
+Updates in release 0.18 part one (2015-04-07):
 * Added options to kill the VM processes during reboot or poweroff requests
 * Added samples of RBAC config into XML manifest for service instances
 * Fixed unportable negative return/exit codes, using proper SMF_EXIT_* now
+
+More updates in release 0.18 (2019-03-10):
+
 * Added sanity checks and warnings about requiring too many optional status
   checks to be done too infrequently over an inadequately short timeframe
+* Refreshed some documentation and cut the release
+
+Updates in release 0.19 (in progress):
+* None yet :)
 
 All thinkable behaviors and variables have been parametrized with SMF
 service properties (group "vm/" or system props in groups "start/",
@@ -289,7 +296,7 @@ or examples in the internet, i.e.:
 
 a) Package format, global zone:
 
-    # gzcat COSvboxsvc-0.18.pkg.gz > /tmp/x
+    # gzcat COSvboxsvc-0.19.pkg.gz > /tmp/x
     # pkgadd -d /tmp/x -G
 
 You probably want the -G flag. It doesn't block you from manually installing
@@ -300,13 +307,13 @@ zero or one per machine (there is no definite/hardcoded limit though). YMMV.
 
 To update the package you can simply remove the old version and install
 anew, i.e.:
-    # gzcat COSvboxsvc-0.18.pkg.gz > /tmp/x
+    # gzcat COSvboxsvc-0.19.pkg.gz > /tmp/x
     # pkgrm COSvboxsvc
     # pkgadd -d /tmp/x -G
 
 A cleaner way is to use an admin file to overwrite an existing package,
 i.e. one from LiveUpgrade:
-    # gzcat COSvboxsvc-0.18.pkg.gz > /tmp/x
+    # gzcat COSvboxsvc-0.19.pkg.gz > /tmp/x
     # pkgadd -d /tmp/x -G -a /etc/lu/zones_pkgadd_admin
 
 Also note that this package "depends" on SUNWvbox, so that should be
@@ -314,7 +321,7 @@ installed beforehand.
 
 b) Package format, local zone: like in the global zone, but without the
 "-G" flag, i.e.:
-    # gzcat COSvboxsvc-0.18.pkg.gz > /tmp/x
+    # gzcat COSvboxsvc-0.19.pkg.gz > /tmp/x
     # pkgadd -d /tmp/x
 
 c) Files: copy script to "/lib/svc/method/vbox.sh" and the XML manifest

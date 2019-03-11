@@ -37,7 +37,7 @@
 <service
 	name='site/xvm/vbox'
 	type='service'
-	version='0.18'>
+	version='0.19'>
 
 	<dependency
 			name='multi-user-server'

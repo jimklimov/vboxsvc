@@ -77,7 +77,7 @@ Features
   Published on GitHub since 2019-03-11. There was little development in the
   later years, because the script "just worked" for everybody interested.
   I can only guess it is nearly perfect then :)
-* Version 0.18 is currently in development -- grab a tarball from SVN or
+* Version 0.19 is currently in development -- grab a tarball from SVN or
   GitHub to see the bleeding-edge new features! URLs:
   ** http://vboxsvc.svn.sourceforge.net/viewvc/vboxsvc/?view=tar
   ** https://github.com/jimklimov/vboxsvc
