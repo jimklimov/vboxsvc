@@ -72,6 +72,11 @@ Features
   ** See link:usr/share/doc/vboxsvc/README-zvolrights.txt[README-zvolrights.txt]
      for more details, including how to enable this service on your system
      (not done by default).
+* The project dates back to 2009, with first CVS commits of our "fork" into
+  our internal CVS on 2010-07-18. Published on SourceForge since 2010-12-07.
+  Published on GitHub since 2019-03-11. There was little development in the
+  later years, because the script "just worked" for everybody interested.
+  I can only guess it is nearly perfect then :)
 * Version 0.18 is currently in development -- grab a tarball from SVN or
   GitHub to see the bleeding-edge new features! URLs:
   ** http://vboxsvc.svn.sourceforge.net/viewvc/vboxsvc/?view=tar
