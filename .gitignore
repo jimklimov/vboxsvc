@@ -1,3 +1,6 @@
 .svn/
 .git/
 CVS/
+./depend
+./pkginfo
+./prototype
